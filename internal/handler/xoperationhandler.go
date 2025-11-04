@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/zeromicro/go-zero/rest/httpx"
-	"x_operation/internal/logic"
-	"x_operation/internal/svc"
-	"x_operation/internal/types"
+	"x-operation/internal/logic"
+	"x-operation/internal/svc"
+	"x-operation/internal/types"
 )
 
 func X_operationHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {

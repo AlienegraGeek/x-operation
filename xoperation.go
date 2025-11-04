@@ -4,9 +4,9 @@ import (
 	"flag"
 	"fmt"
 
-	"x_operation/internal/config"
-	"x_operation/internal/handler"
-	"x_operation/internal/svc"
+	"x-operation/internal/config"
+	"x-operation/internal/handler"
+	"x-operation/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/rest"
@@ -14,7 +14,7 @@ import (
 
 var configFile = flag.String("f", "etc/xoperation-api.yaml", "the config file")
 
-func main() {
+func main1() {
 	flag.Parse()
 
 	var c config.Config
