@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"net/url"
+	neturl "net/url"
 
 	"x-operation/internal/svc"
 	"x-operation/internal/types"
@@ -28,47 +29,61 @@ func NewX_operationLogic(ctx context.Context, svcCtx *svc.ServiceContext) *X_ope
 }
 
 func (l *X_operationLogic) X_operation(req *types.Request) (resp *types.Response, err error) {
-	// todo: add your logic here and delete this line
+	// todo: add logic here and delete this line
 
 	return
 }
 
-func GetMyTwitterID(accessToken string) (string, error) {
-	req, _ := http.NewRequest("GET", "https://api.twitter.com/2/users/me", nil)
+func GetMyUser(accessToken string) (types.UserInfo, error) {
+	req, _ := http.NewRequest("GET", "https://api.x.com/2/users/me", nil)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	proxyUrl, _ := url.Parse("http://127.0.0.1:7890") // 根据你的代理端口改
+	proxyUrl, _ := neturl.Parse("http://127.0.0.1:7890") // 根据你的代理端口改
 	transport := &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
 	httpClient := &http.Client{Transport: transport}
 	resp, err := httpClient.Do(req)
+
 	if err != nil {
-		return "", err
+		return types.UserInfo{}, err
 	}
 	defer resp.Body.Close()
 
-	var data struct {
-		Data struct {
-			ID       string `json:"id"`
-			Username string `json:"username"`
-		} `json:"data"`
+	if resp.StatusCode != http.StatusOK {
+		return types.UserInfo{}, fmt.Errorf("failed to fetch user info: %d", resp.StatusCode)
 	}
+
+	var data struct {
+		Data types.UserInfo `json:"data"`
+	}
+
 	json.NewDecoder(resp.Body).Decode(&data)
 
-	return data.Data.ID, nil
+	return data.Data, nil
 }
 
 func IsFollowing(accessToken, myID, targetID string) (bool, error) {
-	url1 := fmt.Sprintf("https://api.twitter.com/2/users/%s/following", myID)
+	// Pro Limit 50 requests / 15 mins PER USER
+	// Basic Limit 5 requests / 15 mins PER USER
+	// Free Limit ❌
+	url := fmt.Sprintf("https://api.x.com/2/users/%s/following", myID)
 
-	req, _ := http.NewRequest("GET", url1, nil)
+	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	proxyUrl, _ := url.Parse("http://127.0.0.1:7890") // 根据你的代理端口改
+
+	proxyUrl, _ := neturl.Parse("http://127.0.0.1:7890") // 代理端口
 	transport := &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
 	httpClient := &http.Client{Transport: transport}
+
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return false, err
 	}
+
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return false, fmt.Errorf("X API error: %d - %s", resp.StatusCode, string(bodyBytes))
+	}
 
 	var result struct {
 		Data []struct {
